@@ -8,11 +8,21 @@
       filterable
       label-in-value
       @on-select="selectOption"
+      @on-open-change="openChange"
     >
-      <Option v-for="i in selectedList" :value="i.value" :key="i.value">{{
-        i.label
-      }}</Option>
-      <Option value="all" key="all">
+      <Option
+        v-for="i in selectedList"
+        :value="i.value"
+        :key="i.value"
+        :title="i.label"
+        >{{ i.label }}</Option
+      >
+      <Option
+        value="all"
+        key="all"
+        v-if="trans_unselList.length > 0"
+        style="padding: 0px"
+      >
         <p
           @click="
             selectAllFun(
@@ -27,9 +37,13 @@
           }}
         </p>
       </Option>
-      <Option v-for="item in unselList" :value="item.value" :key="item.value">{{
-        item.label
-      }}</Option>
+      <Option
+        v-for="item in unselList"
+        :value="item.value"
+        :key="item.value"
+        :title="item.label"
+        >{{ item.label }}</Option
+      >
     </Select>
   </div>
 </template>
@@ -37,41 +51,7 @@
 export default {
   data () {
     return {
-      unselList: [
-        // 未选数组
-        {
-          value: 'New York',
-          label: 'New York'
-        },
-        {
-          value: 'London',
-          label: 'London'
-        },
-        {
-          value: 'Sydney',
-          label: 'Sydney'
-        },
-        {
-          value: 'Ottawa',
-          label: 'Ottawa'
-        },
-        {
-          value: 'Paris',
-          label: 'Paris'
-        },
-        {
-          value: 'Canberra',
-          label: 'Canberra'
-        },
-        {
-          value: 'Par1is',
-          label: 'Par1is'
-        },
-        {
-          value: 'Canb1erra',
-          label: 'Canb1erra'
-        }
-      ],
+      unselList: [], // 未选数组
       selectedList: [], // 已选数组
       s_arr: [], // v-model绑定选项数组
       add_tag: true, // 新增选项标记
@@ -84,6 +64,12 @@ export default {
       type: String,
       default () {
         return ''
+      }
+    },
+    trans_unselList: {
+      type: Array,
+      default () {
+        return []
       }
     }
   },
@@ -160,6 +146,12 @@ export default {
         }, 100)
       }
     },
+    openChange (isopen) {
+      console.log('isopen: ' + isopen)
+      if (this.selectedList.length > 0 && !isopen) {
+        console.log('this.selectedList： ' + this.selectedList)
+      }
+    },
     allList_setValue () {
       const self = this
       self.unselList.forEach(temp => {
@@ -170,33 +162,49 @@ export default {
   },
   created () {
     const self = this
-    self.allList_setValue()
+    setTimeout(() => {
+      this.unselList = this.trans_unselList
+      self.allList_setValue()
+    }, 500)
   }
 }
 </script>
 <style lang="stylus" scoped>
-.c-search {
+@import '~common/styles/c-common';
+
+.ivu-select-dropdown-list {
+  width: 130px
+}
+
 .ivu-select-dropdown-list li {
-  padding: 0px;
+  width: 120px
   height: 35px;
   line-height: 35px;
   text-align: center;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+  padding: 0 6px;
 }
 .ivu-select {
-    width: 120px;
+    width: 130px;
+}
+/deep/ .ivu-select-input {
+  width: 60px !important
+  overflow: hidden
 }
 p {
-  background: #7da3c7;
+  background: $cBlue;
   color: #fff;
   text-align: center;
   font-weight: 600;
 }
-.ivu-tag {
+/deep/ .ivu-tag {
     display: inline-block;
     height: 22px;
     line-height: 22px;
-    margin: 2px 4px 2px 0;
+    margin: 2px 0px 2px 0;
     padding: unset;
     border: unset;
     border-radius: unset;
@@ -207,9 +215,8 @@ p {
     overflow: hidden;
 }
 .ivu-select-multiple .ivu-select-item-selected:after {
-    top: 0px;
+    top: -10px;
     left: 0px;
     right: unset;
-}
 }
 </style>
