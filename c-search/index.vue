@@ -2,6 +2,7 @@
   <div class="c-search">
     <Select
       v-model="s_arr"
+      :disabled="isdisabled"
       :placeholder="placeholder"
       :max-tag-count="0"
       multiple
@@ -48,6 +49,8 @@
   </div>
 </template>
 <script>
+import { deepCopy } from '@/common/js/utils'
+import { atrToNum_handle } from '@/common/js/c_common'
 export default {
   data () {
     return {
@@ -67,6 +70,18 @@ export default {
       }
     },
     trans_unselList: {
+      type: Array,
+      default () {
+        return []
+      }
+    },
+    isdisabled: {
+      type: Boolean,
+      default () {
+        return false
+      }
+    },
+    trans_selList: {
       type: Array,
       default () {
         return []
@@ -127,7 +142,7 @@ export default {
                 }
               })
             } catch (e) {
-              console.log(e)
+              // console.log(e)
             }
             self.selectedList.push(o)
           } else {
@@ -139,7 +154,7 @@ export default {
                 }
               })
             } catch (e) {
-              console.log(e)
+              // console.log(e)
             }
             self.unselList.push(o)
           }
@@ -147,10 +162,18 @@ export default {
       }
     },
     openChange (isopen) {
-      console.log('isopen: ' + isopen)
-      if (this.selectedList.length > 0 && !isopen) {
-        console.log('this.selectedList： ' + this.selectedList)
+      if (!isopen) {
+        var res = this.backList_handle(this.selectedList)
+        this.$emit('func', res)
       }
+    },
+    // 返回选项列表处理
+    backList_handle (list) {
+      var res = []
+      list.forEach(item => {
+        res.push(item.value)
+      })
+      return res
     },
     allList_setValue () {
       const self = this
@@ -158,20 +181,71 @@ export default {
         self.allList.push(temp.value)
         self.init_list.push(temp)
       })
+    },
+    // 拿到的选项处理
+    selList_handle (trans, unsel) {
+      const self = this
+      setTimeout(() => {
+        if (trans && trans.length > 0) {
+          const sel = []
+          const un_sel = []
+          unsel.forEach(function (item, index) {
+            if (item.value && trans.indexOf(item.value) !== -1) {
+              sel.push(item)
+            } else if (item.value && trans.indexOf(item.value) === -1) {
+              un_sel.push(item)
+            }
+          })
+          self.selectedList = sel
+          // s_arr保存的仅是value
+          self.selectedList.forEach(item => {
+            self.s_arr.push(item.value)
+          })
+          self.unselList = un_sel
+          const res = this.backList_handle(self.selectedList)
+          this.$emit('func', res)
+        } else if (trans && trans.length === 0) {
+          self.selectedList = []
+          self.unselList = []
+          self.init_list.forEach(item => {
+            self.unselList.push(item)
+          })
+          self.s_arr = []
+          const res = this.backList_handle(self.selectedList)
+          this.$emit('func', res)
+        }
+      }, 0)
+    }
+  },
+  watch: {
+    trans_selList (n, o) {
+      const trans = n.length === 0 ? [] : atrToNum_handle(n)
+      this.selectAllFun(false)
+      this.selList_handle(trans, this.init_list)
+    },
+    trans_unselList (n, o) {
+      if (n && n.length > 0) {
+        this.unselList = deepCopy(n)
+        this.allList_setValue()
+      }
     }
   },
   created () {
-    const self = this
+    this.unselList = deepCopy(this.trans_unselList)
+    this.allList_setValue()
     setTimeout(() => {
-      this.unselList = this.trans_unselList
-      self.allList_setValue()
+      if (this.trans_selList && this.trans_selList.length > 0) {
+        const n = this.trans_selList
+        const trans = n.length === 0 ? [] : atrToNum_handle(n)
+        this.selectAllFun(false)
+        this.selList_handle(trans, this.init_list)
+      }
     }, 500)
   }
 }
 </script>
 <style lang="stylus" scoped>
 @import '~common/styles/c-common';
-
 .ivu-select-dropdown-list {
   width: 130px
 }
@@ -214,9 +288,15 @@ p {
     opacity: 1;
     overflow: hidden;
 }
+/deep/ .ivu-select-disabled {
+  .ivu-tag {
+    display: none;
+  }
+}
 .ivu-select-multiple .ivu-select-item-selected:after {
     top: -10px;
     left: 0px;
     right: unset;
 }
 </style>
+
