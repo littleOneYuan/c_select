@@ -24,17 +24,9 @@
         v-if="trans_unselList.length > 0"
         style="padding: 0px"
       >
-        <p
-          @click="
-            selectAllFun(
-              s_arr.length !== unselList.length + selectedList.length
-            )
-          "
-        >
+        <p @click="selectAllFun(s_arr.length !== unselList.length + selectedList.length)">
           {{
-            s_arr.length !== unselList.length + selectedList.length
-              ? "全选"
-              : "取消全选"
+            s_arr.length !== unselList.length + selectedList.length ? "全选" : "取消全选"
           }}
         </p>
       </Option>
@@ -50,7 +42,7 @@
 </template>
 <script>
 import { deepCopy } from '@/common/js/utils'
-import { atrToNum_handle } from '@/common/js/c_common'
+import { atrToNum_handle, isArray } from '@/common/js/c_common'
 export default {
   data () {
     return {
@@ -67,6 +59,13 @@ export default {
       type: String,
       default () {
         return ''
+      }
+    },
+    default_selall: {
+      // 默认全选
+      type: Boolean,
+      default () {
+        return false
       }
     },
     trans_unselList: {
@@ -89,24 +88,27 @@ export default {
     }
   },
   methods: {
+    // 全选/取消全选
     selectAllFun (isAll) {
       const self = this
       setTimeout(() => {
         self.s_arr = []
         if (isAll) {
+          // 全选
           self.selectedList = []
-          self.init_list.forEach(item => {
+          self.init_list.forEach((item) => {
             // 采用这种方式的拷贝，不会只是拷贝了对象的别名（只拷贝别名会导致不期望的被改动）
             self.selectedList.push(item)
           })
           self.unselList = []
-          self.allList.forEach(item => {
+          self.allList.forEach((item) => {
             self.s_arr.push(item)
           })
         } else {
+          // 取消全选
           self.selectedList = []
           self.unselList = []
-          self.init_list.forEach(item => {
+          self.init_list.forEach((item) => {
             self.unselList.push(item)
           })
           self.s_arr = []
@@ -164,20 +166,26 @@ export default {
     openChange (isopen) {
       if (!isopen) {
         var res = this.backList_handle(this.selectedList)
-        this.$emit('func', res)
+        this.$emit('func', res.values, res.labels)
       }
     },
     // 返回选项列表处理
     backList_handle (list) {
-      var res = []
-      list.forEach(item => {
-        res.push(item.value)
-      })
-      return res
+      if (isArray(list)) {
+        var res = {
+          values: [],
+          labels: []
+        }
+        list.forEach((item) => {
+          res.values.push(item.value)
+          res.labels.push(item.label)
+        })
+        return res
+      }
     },
     allList_setValue () {
       const self = this
-      self.unselList.forEach(temp => {
+      self.unselList.forEach((temp) => {
         self.allList.push(temp.value)
         self.init_list.push(temp)
       })
@@ -198,7 +206,7 @@ export default {
           })
           self.selectedList = sel
           // s_arr保存的仅是value
-          self.selectedList.forEach(item => {
+          self.selectedList.forEach((item) => {
             self.s_arr.push(item.value)
           })
           self.unselList = un_sel
@@ -207,7 +215,7 @@ export default {
         } else if (trans && trans.length === 0) {
           self.selectedList = []
           self.unselList = []
-          self.init_list.forEach(item => {
+          self.init_list.forEach((item) => {
             self.unselList.push(item)
           })
           self.s_arr = []
@@ -241,17 +249,27 @@ export default {
         this.selList_handle(trans, this.init_list)
       }
     }, 500)
+    setTimeout(() => {
+      // 默认全选
+      if (this.default_selall) {
+        this.selectAllFun(this.default_selall)
+        console.log(this.selectedList, '-----this.selectedList')
+        var res = this.backList_handle(this.selectedList)
+        const first = true
+        this.$emit('func', res, first)
+      }
+    }, 500)
   }
 }
 </script>
 <style lang="stylus" scoped>
 @import '~common/styles/c-common';
 .ivu-select-dropdown-list {
-  width: 130px
+  width: 150px
 }
 
 .ivu-select-dropdown-list li {
-  width: 120px
+  width: 144px
   height: 35px;
   line-height: 35px;
   text-align: center;
@@ -262,10 +280,21 @@ export default {
   padding: 0 6px;
 }
 .ivu-select {
-    width: 130px;
+    width: 150px;
+}
+@media screen and (min-width: 1440px) {
+  .ivu-select-dropdown-list {
+    width: 186px
+  }
+  .ivu-select {
+    width: 186px;
+  }
+  .ivu-select-dropdown-list li {
+    width: 180px
+  }
 }
 /deep/ .ivu-select-input {
-  width: 60px !important
+  width: 74px !important
   overflow: hidden
 }
 p {
@@ -299,4 +328,3 @@ p {
     right: unset;
 }
 </style>
-
